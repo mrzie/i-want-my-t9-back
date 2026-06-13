@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#18FFFFFF">
+    android:background="#18000000">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,7 +24,7 @@
                 android:scaleType="centerCrop" android:visibility="gone" />
             <TextView android:id="@+id/app_label_0"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textColor="#CCC" android:textSize="9sp"
+                android:textColor="#FFF" android:textSize="9sp"
                 android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
@@ -37,7 +37,7 @@
                 android:scaleType="centerCrop" android:visibility="gone" />
             <TextView android:id="@+id/app_label_1"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textColor="#CCC" android:textSize="9sp"
+                android:textColor="#FFF" android:textSize="9sp"
                 android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
@@ -50,7 +50,7 @@
                 android:scaleType="centerCrop" android:visibility="gone" />
             <TextView android:id="@+id/app_label_2"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textColor="#CCC" android:textSize="9sp"
+                android:textColor="#FFF" android:textSize="9sp"
                 android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
@@ -63,7 +63,7 @@
                 android:scaleType="centerCrop" android:visibility="gone" />
             <TextView android:id="@+id/app_label_3"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textColor="#CCC" android:textSize="9sp"
+                android:textColor="#FFF" android:textSize="9sp"
                 android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
@@ -76,7 +76,7 @@
                 android:scaleType="centerCrop" android:visibility="gone" />
             <TextView android:id="@+id/app_label_4"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:textColor="#CCC" android:textSize="9sp"
+                android:textColor="#FFF" android:textSize="9sp"
                 android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 

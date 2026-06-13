@@ -17,16 +17,32 @@ class T9WidgetProvider : AppWidgetProvider() {
         private const val PREFS = "t9_widget_prefs"
         private const val KEY_INPUT = "input"
         private const val KEY_CACHED_COLS = "cached_cols"
+        private const val KEY_ROWS = "rows"
         private const val ACTION_KEY_PRESS = "com.t9launcher.KEY_PRESS"
         private const val ACTION_APP_CLICK = "com.t9launcher.APP_CLICK"
         private const val EXTRA_KEY = "key"
         private const val EXTRA_PKG = "pkg"
+        private const val ROWS_THRESHOLD_DP = 140
     }
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         for (id in ids) {
             updateWidget(context, manager, id)
         }
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: android.os.Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        val prefs = getPrefs(context)
+        val minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+        val rows = if (minHeight >= ROWS_THRESHOLD_DP) 2 else 1
+        prefs.edit().putInt(KEY_ROWS, rows).apply()
+        updateWidget(context, appWidgetManager, appWidgetId)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -71,12 +87,20 @@ class T9WidgetProvider : AppWidgetProvider() {
         val input = prefs.getString(KEY_INPUT, "") ?: ""
         val currentCols = com.t9launcher.engine.SettingsManager.getColumns(context)
         val cachedCols = prefs.getInt(KEY_CACHED_COLS, currentCols)
+        val currentRows = prefs.getInt(KEY_ROWS, 1)
         val layoutChanged = currentCols != cachedCols
 
-        val layoutRes = when (currentCols) {
-            3 -> R.layout.widget_t9_3col
-            4 -> R.layout.widget_t9_4col
-            else -> R.layout.widget_t9
+        val layoutRes = when (currentRows) {
+            2 -> when (currentCols) {
+                3 -> R.layout.widget_t9_3col_2row
+                4 -> R.layout.widget_t9_4col_2row
+                else -> R.layout.widget_t9_2row
+            }
+            else -> when (currentCols) {
+                3 -> R.layout.widget_t9_3col
+                4 -> R.layout.widget_t9_4col
+                else -> R.layout.widget_t9
+            }
         }
 
         val views = RemoteViews(context.packageName, layoutRes)
@@ -92,7 +116,7 @@ class T9WidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.widget_no_match, android.view.View.GONE)
         }
 
-        val maxSlots = getMaxSlots(currentCols)
+        val maxSlots = getMaxSlots(currentCols, currentRows)
         for (i in 0 until maxSlots) {
             val iconId = context.resources.getIdentifier("app_icon_$i", "id", context.packageName)
             val labelId = context.resources.getIdentifier("app_label_$i", "id", context.packageName)
@@ -136,10 +160,17 @@ class T9WidgetProvider : AppWidgetProvider() {
         manager.updateAppWidget(id, views)
     }
 
-    private fun getMaxSlots(cols: Int): Int = when (cols) {
-        3 -> 3
-        4 -> 4
-        else -> 5
+    private fun getMaxSlots(cols: Int, rows: Int): Int = when (rows) {
+        2 -> when (cols) {
+            3 -> 6
+            4 -> 8
+            else -> 10
+        }
+        else -> when (cols) {
+            3 -> 3
+            4 -> 4
+            else -> 5
+        }
     }
 
     private fun bindAllKeys(context: Context, views: RemoteViews) {

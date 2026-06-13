@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#18FFFFFF">
+    android:background="#18000000">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,7 +20,7 @@
             android:layout_weight="1" android:orientation="vertical"
             android:gravity="center" android:padding="2dp">
             <ImageView android:id="@+id/app_icon_0" android:layout_width="40dp" android:layout_height="40dp" android:scaleType="centerCrop" android:visibility="gone" />
-            <TextView android:id="@+id/app_label_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCC" android:textSize="9sp" android:maxLines="1" android:visibility="gone" />
+            <TextView android:id="@+id/app_label_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFF" android:textSize="9sp" android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/app_slot_1"
@@ -28,7 +28,7 @@
             android:layout_weight="1" android:orientation="vertical"
             android:gravity="center" android:padding="2dp">
             <ImageView android:id="@+id/app_icon_1" android:layout_width="40dp" android:layout_height="40dp" android:scaleType="centerCrop" android:visibility="gone" />
-            <TextView android:id="@+id/app_label_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCC" android:textSize="9sp" android:maxLines="1" android:visibility="gone" />
+            <TextView android:id="@+id/app_label_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFF" android:textSize="9sp" android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/app_slot_2"
@@ -36,7 +36,7 @@
             android:layout_weight="1" android:orientation="vertical"
             android:gravity="center" android:padding="2dp">
             <ImageView android:id="@+id/app_icon_2" android:layout_width="40dp" android:layout_height="40dp" android:scaleType="centerCrop" android:visibility="gone" />
-            <TextView android:id="@+id/app_label_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#CCC" android:textSize="9sp" android:maxLines="1" android:visibility="gone" />
+            <TextView android:id="@+id/app_label_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFF" android:textSize="9sp" android:maxLines="1" android:visibility="gone" />
         </LinearLayout>
 
     </LinearLayout>

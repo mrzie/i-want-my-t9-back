@@ -58,6 +58,7 @@ fun T9LauncherScreen(onSettings: () -> Unit = {}) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         if (input.isNotEmpty() && filtered.isEmpty()) {
             Box(

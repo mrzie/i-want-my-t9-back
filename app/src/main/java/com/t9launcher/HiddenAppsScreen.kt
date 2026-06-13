@@ -24,15 +24,22 @@ fun HiddenAppsScreen(onBack: () -> Unit) {
     var allApps by remember { mutableStateOf<List<com.t9launcher.model.AppInfo>>(emptyList()) }
     var hidden by remember { mutableStateOf(setOf<String>()) }
     var search by remember { mutableStateOf("") }
+    var filterMode by remember { mutableIntStateOf(0) } // 0: all, 1: hidden, 2: visible
 
     LaunchedEffect(Unit) {
-        val result = loadAllApps(context)
-        allApps = result.first
+        allApps = loadAllApps(context)
         hidden = com.t9launcher.engine.HiddenAppsManager.getHidden(context)
     }
 
     val filtered = allApps.filter {
-        it.label.contains(search, ignoreCase = true) || it.packageName.contains(search, ignoreCase = true)
+        val matchesSearch = it.label.contains(search, ignoreCase = true) || it.packageName.contains(search, ignoreCase = true)
+        val isHidden = hidden.contains(it.packageName)
+        val matchesFilter = when (filterMode) {
+            1 -> isHidden
+            2 -> !isHidden
+            else -> true
+        }
+        matchesSearch && matchesFilter
     }
 
     Column(
@@ -58,23 +65,49 @@ fun HiddenAppsScreen(onBack: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF2A2A2A))
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (search.isEmpty()) {
-                Text("搜索应用...", color = Color(0xFF666666), fontSize = 14.sp)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF2A2A2A))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                if (search.isEmpty()) {
+                    Text("搜索应用...", color = Color(0xFF666666), fontSize = 14.sp)
+                }
+                androidx.compose.foundation.text.BasicTextField(
+                    value = search,
+                    onValueChange = { search = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 14.sp),
+                    singleLine = true
+                )
             }
-            androidx.compose.foundation.text.BasicTextField(
-                value = search,
-                onValueChange = { search = it },
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 14.sp),
-                singleLine = true
-            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            val tabs = listOf("所有", "隐藏", "显示")
+            val tabColors = listOf(Color(0xFF4A90D9), Color(0xFFFF6B6B), Color(0xFF66BB6A))
+            tabs.forEachIndexed { index, label ->
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (filterMode == index) tabColors[index] else Color(0xFF2A2A2A))
+                        .clickable { filterMode = index }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -130,11 +163,11 @@ fun HiddenAppsScreen(onBack: () -> Unit) {
     }
 }
 
-private fun loadAllApps(context: android.content.Context): Pair<List<com.t9launcher.model.AppInfo>, Int> {
+private fun loadAllApps(context: android.content.Context): List<com.t9launcher.model.AppInfo> {
     val pm = context.packageManager
     val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
     val result = apps.mapNotNull { appInfo ->
-        val launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName) ?: return@mapNotNull null
+        val launchIntent = findLaunchIntent(pm, appInfo.packageName) ?: return@mapNotNull null
         com.t9launcher.model.AppInfo(
             label = appInfo.loadLabel(pm).toString(),
             packageName = appInfo.packageName,
@@ -144,5 +177,35 @@ private fun loadAllApps(context: android.content.Context): Pair<List<com.t9launc
             isSystem = (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
         )
     }.sortedBy { it.label.lowercase() }
-    return Pair(result, 0)
+    return result
+}
+
+private fun findLaunchIntent(pm: android.content.pm.PackageManager, packageName: String): android.content.Intent? {
+    pm.getLaunchIntentForPackage(packageName)?.let { return it }
+    val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+        addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+        `package` = packageName
+    }
+    val resolveInfos = pm.queryIntentActivities(intent, 0)
+    if (resolveInfos.isNotEmpty()) {
+        val ri = resolveInfos[0]
+        return android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+            setClassName(packageName, ri.activityInfo.name)
+            addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+        }
+    }
+    try {
+        val pi = pm.getPackageInfo(packageName, android.content.pm.PackageManager.GET_ACTIVITIES)
+        val mainActivity = pi.activities?.firstOrNull {
+            it.name.endsWith(".MainActivity") || it.name.endsWith(".HomeActivity")
+                    || it.name.endsWith(".LauncherActivity") || it.name.endsWith(".Main")
+        } ?: pi.activities?.firstOrNull()
+        if (mainActivity != null) {
+            return android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                setClassName(packageName, mainActivity.name)
+                addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+            }
+        }
+    } catch (_: Exception) {}
+    return null
 }

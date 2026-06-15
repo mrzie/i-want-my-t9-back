@@ -34,6 +34,7 @@ fun SettingsScreen(onBack: () -> Unit) {
 
     when (subPage) {
         "hidden_apps" -> HiddenAppsPage(onBack = { subPage = null })
+        "about" -> AboutPage(onBack = { subPage = null })
         else -> SettingsMainPage(onBack = onBack, onNavigate = { subPage = it })
     }
 }
@@ -97,37 +98,6 @@ private fun SettingsMainPage(onBack: () -> Unit, onNavigate: (String) -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("关于 T9 Search", color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "为了纪念系统功能本该有的 T9 应用搜索能力，我们只能用一种迂回的办法挽留这个功能。",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "GitHub",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 13.sp,
-                    modifier = Modifier.clickable {
-                        val intent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://github.com/mrzie/i-want-my-t9-back")
-                        )
-                        context.startActivity(intent)
-                    }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onNavigate("hidden_apps") },
@@ -145,6 +115,31 @@ private fun SettingsMainPage(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("已隐藏 ${hiddenCount.intValue} 个应用", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigate("about") },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("关于 T9 Search", color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, modifier = Modifier.weight(1f))
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = null,
@@ -401,4 +396,61 @@ private fun findLaunchIntent(pm: android.content.pm.PackageManager, packageName:
         }
     } catch (_: Exception) {}
     return null
+}
+
+@Composable
+private fun AboutPage(onBack: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "返回",
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .clickable { onBack() }
+                    .padding(end = 12.dp)
+                    .size(24.dp)
+            )
+            Text("关于 T9 Search", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "为了纪念系统功能本该有的 T9 应用搜索能力，我们只能用一种迂回的办法挽留这个功能。",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "GitHub",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://github.com/mrzie/i-want-my-t9-back")
+                        )
+                        context.startActivity(intent)
+                    }
+                )
+            }
+        }
+    }
 }

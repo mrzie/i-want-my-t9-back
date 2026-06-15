@@ -101,7 +101,7 @@ private fun scoreApp(digits: List<Int>, app: com.t9launcher.model.AppInfo): Int 
     val prefix = digitsToPrefix(digits, initials)
     if (initials.length == digits.size && matchSubsequence(digits, initials)) {
         bestScore = maxOf(bestScore, SCORE_INITIAL_EXACT)
-    } else if (prefix.isNotEmpty() && initials.startsWith(prefix)) {
+    } else if (prefix.isNotEmpty() && prefix.length == digits.size && initials.startsWith(prefix)) {
         bestScore = maxOf(bestScore, SCORE_INITIAL_PREFIX)
     } else if (matchSubsequence(digits, initials)) {
         bestScore = maxOf(bestScore, SCORE_INITIAL_SUBSEQ)

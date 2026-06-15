@@ -25,16 +25,27 @@ class T9MatcherTest {
     }
 
     @Test
-    fun `basic english match - 22 matches App`() {
+    fun `basic english match - 22 matches Cat`() {
         val result = match("22", listOf("App", "Beta", "Cat"))
-        assertTrue(result.contains("App"))
-        assertTrue(result.contains("Beta"))
+        assertTrue(result.contains("Cat"))
+    }
+
+    @Test
+    fun `22 does not match App`() {
+        val result = match("22", listOf("App"))
+        assertTrue(result.isEmpty())
     }
 
     @Test
     fun `wildcard digit 1 matches any char`() {
         val result = match("12", listOf("App", "Beta", "Cat"))
-        assertTrue(result.contains("App"))
+        assertTrue(result.contains("Cat"))
+    }
+
+    @Test
+    fun `12 does not match App`() {
+        val result = match("12", listOf("App"))
+        assertTrue(result.isEmpty())
     }
 
     @Test
@@ -45,10 +56,24 @@ class T9MatcherTest {
     }
 
     @Test
+    fun `68 does not match taobao`() {
+        // t=8, b=2 → 82, not 68
+        val result = match("68", listOf("淘宝"))
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
     fun `chinese pinyin subsequence - 826 matches tao`() {
         // t=8, a=2, o=6
         val result = match("826", listOf("淘宝", "美团", "京东"))
         assertEquals("淘宝", result.first())
+    }
+
+    @Test
+    fun `826 does not match jingdong`() {
+        // jingdong = 54646364, 8=t not in jingdong
+        val result = match("826", listOf("京东"))
+        assertTrue(result.isEmpty())
     }
 
     @Test
@@ -63,6 +88,12 @@ class T9MatcherTest {
         // j=5, d=3
         val result = match("53", listOf("京东", "淘宝", "美团"))
         assertEquals("京东", result.first())
+    }
+
+    @Test
+    fun `53 does not match taobao`() {
+        val result = match("53", listOf("淘宝"))
+        assertTrue(result.isEmpty())
     }
 
     @Test
@@ -85,11 +116,25 @@ class T9MatcherTest {
     }
 
     @Test
+    fun `a2 does not match Cat`() {
+        // a is ignored, 2=ABC, Cat starts with c=2
+        // but "App" matches via label "app" a=2
+        val result = match("a2", listOf("Cat"))
+        assertTrue(result.contains("Cat"))
+    }
+
+    @Test
     fun `wildcard 1 matches bilibili with 1515`() {
         // b=2, i=4, l=5, i=4, b=2, i=4, l=5, i=4
         // 1=wc, 5=l, 1=wc, 5=l
         val result = match("1515", listOf("哔哩哔哩", "美团", "京东"))
         assertEquals("哔哩哔哩", result.first())
+    }
+
+    @Test
+    fun `1515 does not match meituan`() {
+        val result = match("1515", listOf("美团"))
+        assertTrue(result.isEmpty())
     }
 
     @Test
@@ -103,5 +148,12 @@ class T9MatcherTest {
     fun `single digit 9 still matches apps with WXYZ`() {
         val result = match("9", listOf("WhatsApp", "WeChat", "App"))
         assertTrue(result.isNotEmpty())
+    }
+
+    @Test
+    fun `single digit 9 does not match Cat`() {
+        // C=2, a=2, t=8, none is 9
+        val result = match("9", listOf("Cat"))
+        assertTrue(result.isEmpty())
     }
 }

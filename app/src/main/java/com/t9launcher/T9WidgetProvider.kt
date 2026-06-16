@@ -22,7 +22,7 @@ class T9WidgetProvider : AppWidgetProvider() {
         private const val ACTION_APP_CLICK = "com.t9launcher.APP_CLICK"
         private const val EXTRA_KEY = "key"
         private const val EXTRA_PKG = "pkg"
-        private const val ROWS_THRESHOLD_DP = 240
+        private const val ROWS_THRESHOLD_DP = 280
     }
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {

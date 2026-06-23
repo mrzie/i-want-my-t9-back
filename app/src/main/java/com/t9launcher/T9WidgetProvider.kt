@@ -214,10 +214,11 @@ class T9WidgetProvider : AppWidgetProvider() {
         return apps.mapNotNull { appInfo ->
             if (hidden.contains(appInfo.packageName)) return@mapNotNull null
             val launchIntent = findLaunchIntent(pm, appInfo.packageName) ?: return@mapNotNull null
+            val systemIcon = appInfo.loadIcon(pm)
             com.t9launcher.model.AppInfo(
                 label = appInfo.loadLabel(pm).toString(),
                 packageName = appInfo.packageName,
-                icon = appInfo.loadIcon(pm),
+                icon = com.t9launcher.engine.IconResolver.resolve(context, appInfo.packageName, systemIcon),
                 component = launchIntent.component
                     ?: ComponentName(appInfo.packageName, ""),
                 launchCount = counts[appInfo.packageName] ?: 0

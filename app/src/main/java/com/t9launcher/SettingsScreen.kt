@@ -2,7 +2,6 @@ package com.t9launcher
 
 import android.content.pm.PackageManager
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -32,8 +31,13 @@ import com.t9launcher.engine.HiddenAppsFilter
 fun SettingsScreen(onBack: () -> Unit) {
     var subPage by remember { mutableStateOf<String?>(null) }
 
+    androidx.activity.compose.BackHandler {
+        if (subPage != null) subPage = null else onBack()
+    }
+
     when (subPage) {
         "hidden_apps" -> HiddenAppsPage(onBack = { subPage = null })
+        "icon_pack" -> IconPackPage(onBack = { subPage = null })
         "about" -> AboutPage(onBack = { subPage = null })
         else -> SettingsMainPage(onBack = onBack, onNavigate = { subPage = it })
     }
@@ -58,95 +62,244 @@ private fun SettingsMainPage(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "关闭",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .clickable { onBack() }
-                    .padding(end = 12.dp)
-                    .size(24.dp)
-            )
-            Text("设置", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "关闭",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Text("设置", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(16.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("应用列数", color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (opt in listOf(3, 4, 5)) {
-                        FilterChip(
-                            selected = opt == columns,
-                            onClick = {
-                                columns = opt
-                                com.t9launcher.engine.SettingsManager.setColumns(context, opt)
-                            },
-                            label = { Text("${opt}列") }
-                        )
+            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                ListItem(
+                    headlineContent = { Text("应用列数") },
+                    supportingContent = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (opt in listOf(3, 4, 5)) {
+                                FilterChip(
+                                    selected = opt == columns,
+                                    onClick = {
+                                        columns = opt
+                                        com.t9launcher.engine.SettingsManager.setColumns(context, opt)
+                                    },
+                                    label = { Text("${opt}列") }
+                                )
+                            }
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Box(modifier = Modifier.clickable { onNavigate("hidden_apps") }) {
+                    ListItem(
+                        headlineContent = { Text("不显示应用") },
+                        supportingContent = { Text("已隐藏 ${hiddenCount.intValue} 个应用") },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Box(modifier = Modifier.clickable { onNavigate("icon_pack") }) {
+                    ListItem(
+                        headlineContent = { Text("图标包") },
+                        supportingContent = {
+                            val currentPackId = com.t9launcher.engine.SettingsManager.getIconPackId(context)
+                            val packs = remember { com.t9launcher.engine.IconResolver.getInstalledPacks(context) }
+                            val label = if (currentPackId == null) "系统默认"
+                                else packs.find { it.packageName == currentPackId }?.label ?: currentPackId
+                            Text(label)
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                Box(modifier = Modifier.clickable { onNavigate("about") }) {
+                    ListItem(
+                        headlineContent = { Text("关于 T9 Search") },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Box(modifier = Modifier.clickable {
+                    val apkFile = java.io.File(context.packageCodePath)
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        context, "${context.packageName}.fileprovider", apkFile
+                    )
+                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "application/vnd.android.package-archive"
+                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
+                    context.startActivity(
+                        android.content.Intent.createChooser(shareIntent, "分享 T9 Search")
+                    )
+                }) {
+                    ListItem(
+                        headlineContent = { Text("分享应用") },
+                        supportingContent = { Text("将安装包发送给朋友") },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconPackPage(onBack: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var currentPackId by remember { mutableStateOf(com.t9launcher.engine.SettingsManager.getIconPackId(context)) }
+    var installedPacks by remember { mutableStateOf<List<com.t9launcher.engine.InstalledIconPack>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        installedPacks = com.t9launcher.engine.IconResolver.getInstalledPacks(context)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回"
+                )
+            }
+            Text("图标包", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                ListItem(
+                    headlineContent = { Text("系统默认") },
+                    supportingContent = { Text("使用应用原始图标") },
+                    leadingContent = {
+                        RadioButton(
+                            selected = currentPackId == null,
+                            onClick = {
+                                currentPackId = null
+                                com.t9launcher.engine.SettingsManager.setIconPackId(context, null)
+                                com.t9launcher.engine.IconResolver.clearCache()
+                            }
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        currentPackId = null
+                        com.t9launcher.engine.SettingsManager.setIconPackId(context, null)
+                        com.t9launcher.engine.IconResolver.clearCache()
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+
+                if (installedPacks.isNotEmpty()) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+
+                for (pack in installedPacks) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    ListItem(
+                        headlineContent = { Text(pack.label) },
+                        supportingContent = { Text(pack.packageName) },
+                        leadingContent = {
+                            RadioButton(
+                                selected = currentPackId == pack.packageName,
+                                onClick = {
+                                    currentPackId = pack.packageName
+                                    com.t9launcher.engine.SettingsManager.setIconPackId(context, pack.packageName)
+                                    com.t9launcher.engine.IconResolver.clearCache()
+                                }
+                            )
+                        },
+                        trailingContent = {
+                            val packIcon = pack.icon
+                            if (packIcon != null) {
+                                androidx.compose.foundation.Image(
+                                    bitmap = iconToBitmap(packIcon, 48).asImageBitmap(),
+                                    contentDescription = pack.label,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        },
+                        modifier = Modifier.clickable {
+                            currentPackId = pack.packageName
+                            com.t9launcher.engine.SettingsManager.setIconPackId(context, pack.packageName)
+                            com.t9launcher.engine.IconResolver.clearCache()
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onNavigate("hidden_apps") },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("不显示应用", color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("已隐藏 ${hiddenCount.intValue} 个应用", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onNavigate("about") },
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("关于 T9 Search", color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+        if (installedPacks.isEmpty()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "未检测到已安装的图标包。\n请安装支持 ADW/Nova 标准的图标包应用。",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp,
+                lineHeight = 20.sp
+            )
         }
     }
 }
@@ -186,16 +339,13 @@ private fun HiddenAppsPage(onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "返回",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .clickable { onBack() }
-                    .padding(end = 12.dp)
-                    .size(24.dp)
-            )
-            Text("隐藏应用", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回"
+                )
+            }
+            Text("隐藏应用", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -412,45 +562,34 @@ private fun AboutPage(onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "返回",
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .clickable { onBack() }
-                    .padding(end = 12.dp)
-                    .size(24.dp)
-            )
-            Text("关于 T9 Search", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回"
+                )
+            }
+            Text("关于 T9 Search", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "为了纪念系统功能本该有的 T9 应用搜索能力，我们只能用一种迂回的办法挽留这个功能。",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 14.sp
+        Text(
+            text = "为了纪念系统功能本该有的 T9 应用搜索能力，我们只能用一种迂回的办法挽留这个功能。",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 14.sp
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "GitHub",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 14.sp,
+            modifier = Modifier.clickable {
+                val intent = android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://github.com/mrzie/i-want-my-t9-back")
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "GitHub",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 14.sp,
-                    modifier = Modifier.clickable {
-                        val intent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://github.com/mrzie/i-want-my-t9-back")
-                        )
-                        context.startActivity(intent)
-                    }
-                )
+                context.startActivity(intent)
             }
-        }
+        )
     }
 }
